@@ -1,0 +1,12 @@
+{
+  "name": "epicprogresstracker",
+  "version": "1.0.0",
+  "description": "progress tracker for goals",
+  "author": "Breanna de Asis Lee",
+  "scripts": {
+    "start": "node server.improved.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
