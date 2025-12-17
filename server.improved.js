@@ -15,8 +15,12 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'default',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: true}
+    cookie: { secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24
+    }
 }))
+
 //Middleware to parse JSON
 app.use(express.json());
 app.use(express.static('public'));
@@ -68,9 +72,12 @@ app.post('/register', async (req, res) => {
 
         user = new User({username, password: hashedPassword});
         await user.save();
-
         req.session.userId = user._id;
-        res.status(201).json({msg: 'User registered successfully'});
+
+        req.session.save((err) => {
+            if (err) return res.status(500).json('Server Error');
+            res.status(201).json({msg: 'User registered successfully'});
+        });
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');

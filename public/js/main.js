@@ -13,8 +13,6 @@ const dueDateInput = document.getElementById("due-date-input");
 const priorityList = document.getElementById("priority-tasks");
 const taskList = document.getElementById("task-list");
 const completedList = document.getElementById("completed-tasks");
-const overdueTitle = document.getElementById("overdue-header");
-const otherTitle = document.getElementById("other-header");
 
 const authContainer = document.getElementById("auth-container");
 const todoContainer = document.getElementById("todo-container");
@@ -70,7 +68,7 @@ const handleAuth = async (url, action) => {
   }
 
   try {
-    const response = await fetch('/register', {
+    const response = await fetch(url, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({username, password})
@@ -104,8 +102,6 @@ const handleLogout = async (event) => {
   taskList.innerHTML = '';
   completedList.innerHTML = '';
   priorityList.innerHTML = '';
-  overdueTitle.innerHTML= '';
-  otherTitle.innerHTML= '';
 }
 
 //ADDS A NEW TASK
@@ -128,8 +124,12 @@ const submit = async function( event ) {
     //.then(function(json) {
 
     if (response.ok){
-      const updatedTasks = await response.json();
-      printTasks(updatedTasks);
+      const data = await response.json();
+      printTasks(data.tasks);
+      const focusDisplay = document.getElementById('total-focus-time');
+      if (focusDisplay){
+        focusDisplay.innerText = data.totalFocusTime || 0;
+      }
       taskInput.value = "";
       dueDateInput.value = "";
     } else if (response.status === 401){
