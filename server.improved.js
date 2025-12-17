@@ -1,6 +1,6 @@
 const express = require('express');
 const session = require('express-session');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const connectDB = require('./db');
 const Task = require('./task');
 const User = require('./user');
@@ -237,7 +237,7 @@ app.post('/update-focus', ensureAuthenticated, async (req, res) => {
 });
 
 if (process.env.NODE_ENV !== 'production'){
-    app.listen(process.env.PORT || port, () => {
+    app.listen(process.env.PORT || 3000, () => {
         console.log(`Server running on port${process.env.PORT || port}/`);
     });
 }
