@@ -3,7 +3,7 @@
   "builds": [
     { "src": "server.improved.js", "use": "@vercel/node" }
   ],
-  "routes": [
+  "rewrites": [
     { "source": "/(.*)", "destination": "server.improved.js" }
   ]
 }

@@ -14,11 +14,8 @@ const port = 3000;
 app.use(session({
     secret: process.env.SESSION_SECRET || 'default',
     resave: false,
-    saveUninitialized: true,
-    cookie: { secure: process.env.NODE_ENV === 'production',
-        httpOnly: true,
-        maxAge: 1000 * 60 * 60 * 24
-    }
+    saveUninitialized: false,
+    cookie: { secure: true}
 }))
 //Middleware to parse JSON
 app.use(express.json());
