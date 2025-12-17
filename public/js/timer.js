@@ -12,7 +12,6 @@ function updateDisplay(){
   const seconds = timeLeft % 60;
   minutesDisplay.textContent = String(minutes).padStart(2, '0');
   secondsDisplay.textContent = String(seconds).padStart(2, '0');
-  debugger;
 }
 
 function startPause(){
@@ -25,13 +24,30 @@ function startPause(){
         updateDisplay();
       } else {
         clearInterval(timer);
-        alert('Good job!');
+        alert('You just completed 45 minutes of focus!');
+        updateFocusTime(45);
         startPauseButton.textContent = 'Start';
       }
     }, 1000)
   } else {
     startPauseButton.textContent = 'Start';
     clearInterval(timer);
+  }
+}
+
+async function updateFocusTime(minutes){
+  try {
+    const response = await fetch('/update-focus', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({minutes})
+    });
+    if (response.ok){
+      const result = await response.json();
+      document.getElementById('total-focus-time').innerText = result.totalFocusTime;
+    }
+  } catch (error) {
+    console.error('Failed to update focus time:', error);
   }
 }
 

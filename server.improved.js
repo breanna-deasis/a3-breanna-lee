@@ -1,89 +1,231 @@
 const express = require('express');
+const session = require('express-session');
+const bcrypt = require('bcrypt');
+const connectDB = require('./db');
+const Task = require('./task');
+const User = require('./user');
+require('dotenv').config();
+console.log('URI being used:', process.env.MONGODB_URI);
+connectDB();
+
 const app = express();
 const port = 3000;
 
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'default',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24
+    }
+}))
 //Middleware to parse JSON
 app.use(express.json());
 app.use(express.static('public'));
 
-function formatDate(thisDate) {
-    let month = thisDate.getMonth() + 1;
-    let day = thisDate.getDate();
-    let year = thisDate.getFullYear();
-    return `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/${year.toString().padStart(4, '0')}`;
+function ensureAuthenticated(req, res, next){
+    if (req.session && req.session.userId){
+        return next();
+    }
+    res.status(401).json({msg: 'Unauthorized'});
 }
 
-let today = new Date();
-let formattedDate = formatDate(today);
+function addDerivedFields(taskDoc){
+    const task = taskDoc.toObject ? taskDoc.toObject() : taskDoc;
 
-let tasks = [
-    {task: "Mark this task as completed", completed: false, due: formattedDate},
-    {task: "Add a new task", completed: false, due: formattedDate},
-    {task: "Start the focus timer", completed: false, due: formattedDate}
-]
+    task.id = task._id;
+    delete task._id;
 
-function addDerivedFields(task){
-    const due = new Date(task.due);
     const now = new Date();
+    const nowTime = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
+    const dueDate = new Date(task.dueDate);
 
-    due.setHours(0,0,0,0);
-    now.setHours(0,0,0,0);
+    const month = (dueDate.getUTCMonth() + 1).toString().padStart(2, '0');
+    const day = dueDate.getUTCDate().toString().padStart(2, '0');
+    const year = dueDate.getUTCFullYear();
+    task.dueDate = `${month}-${day}-${year}`;
 
-    const daysLeft = due - now;
-    task.overdue = !task.completed && daysLeft < 0;
+    const dueDateTime = Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
 
+    //console.log(`Task: ${task.task}, Due: ${dueDateTime}, Now: ${nowTime}`);
+    task.overdue = !task.completed && dueDateTime < nowTime;
     return task;
 }
 
-//Routes
-app.get('/tasks', (req, res) => {
-    res.json(tasks.map(t =>addDerivedFields({...t})))
-})
+app.post('/register', async (req, res) => {
+    try {
+        const {username, password} = req.body;
 
-app.post('/tasks', (req, res) => {
-    const newTask = req.body;
-    if (!newTask.due){
-        newTask.due = formattedDate;
-    } else {
-        newTask.due = formatDate(new Date(newTask.due));
+        if (!username || !password){
+            return res.status(400).json({msg: 'Username and password are required'});
+        }
+
+        let user = await User.findOne({username})
+        if (user){
+            return res.status(400).json({msg: 'Username already exists'});
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        user = new User({username, password: hashedPassword});
+        await user.save();
+
+        req.session.userId = user._id;
+        res.status(201).json({msg: 'User registered successfully'});
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
     }
-
-    if (!newTask.hasOwnProperty('completed')){
-        newTask.completed = false;
-    }
-
-    tasks.push(newTask);
-    console.log("Added task:", newTask);
-
-    res.json(tasks.map(t => addDerivedFields({...t})));
-
 });
 
-app.patch('/tasks', (req, res) => {
-    const parsed = req.body;
-    let updatedTask = null;
-    
-    if (parsed.originalTask && parsed.updatedTask){
-        const task = tasks.find(t => t.task === parsed.originalTask);
-        if (task){
-            task.task = parsed.newTask;
-            updatedTask = task;
+app.post('/login', async (req, res) => {
+    try {
+        const {username, password} = req.body;
+
+        if (!username || !password){
+            return res.status(400).json({msg: 'Username and password are required'});
         }
-    } else {
-        const task = tasks.find(t => t.task === parsed.task);
-        if (task) {
-            if (parsed.hasOwnProperty('completed')) task.completed = parsed.completed;
-            if (parsed.due) task.due = formatDate(new Date(parsed.due));
-            updatedTask = task;
+
+        const user = await User.findOne({username});
+        if (!user){
+            return res.status(400).json({msg: 'Invalid credentials'});
         }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch){
+            return res.status(400).json({msg: 'Invalid credentials'});
+        }
+
+        req.session.userId = user._id;
+        res.json({msg: 'Login successful', user: {id: user._id, username: user.username}});
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
     }
-    res.json(tasks.map(t => addDerivedFields({...t})));
+});
+
+app.post('/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err){
+            return res.status(500).send('Could not log out');
+        }
+        res.json({msg: 'Logout successful'});
+    });
+});
+//Routes
+app.get('/tasks', ensureAuthenticated, async (req, res) => {
+    try {
+        const tasks = await Task.find({userId: req.session.userId}).sort({dueDate: 'asc'})
+        const user = await User.findById(req.session.userId);
+        res.json({tasks: tasks.map(t =>addDerivedFields(t)), totalFocusTime : user.totalFocusTime || 0});
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+app.post('/tasks', ensureAuthenticated, async (req, res) => {
+    try {
+        const {task, completed, dueDate}= req.body;
+        const newTask = new Task({
+            task:task, 
+            completed: completed || false, 
+            dueDate: dueDate ? new Date(dueDate) : new Date(),
+            userId: req.session.userId
+        });
+        
+        await newTask.save();
+        const allTasks = await Task.find({userId: req.session.userId}).sort({dueDate: 'asc'});
+        const user = await User.findById(req.session.userId);
+        res.json({tasks: allTasks.map(t => addDerivedFields(t)), totalFocusTime: user.totalFocusTime || 0});
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+app.patch('/tasks', ensureAuthenticated, async (req, res) => {
+    try {
+        const {id, task, completed, dueDate} = req.body;
+        if (!id) return res.status(400).send('Task ID is required');
+        
+        let updateFields = {};
+        
+        if (task !== undefined) updateFields.task = task;
+        if (completed !== undefined) updateFields.completed = completed;
+        /*if (dueDate) {
+            const dateParts = dueDate.split('-');
+            if (dateParts.length === 3){
+                const month = parseInt(dateParts[0], 10) - 1;
+                const day = parseInt(dateParts[1], 10);
+                const year = parseInt(dateParts[2], 10);
+
+                const parsedDate = new Date(year, month, day);
+                updateFields.dueDate = parsedDate;
+            } else {
+                updateFields.dueDate = new Date(dueDate);
+            }
+        }
+        const updatedDoc = await Task.findOneAndUpdate(
+            { _id: id, userId: req.session.userId },
+            {$set: updateFields},
+            {new: true}
+        );
+        if (!updatedDoc){
+            return res.status(404).json({msg:'Task not found'});
+        }*/
+
+        if (dueDate) updateFields.dueDate = new Date(dueDate);
+        await Task.findOneAndUpdate(
+            { _id: id, userId: req.session.userId },
+            { $set: updateFields }
+        );
+
+        const tasks = await Task.find({userId: req.session.userId}).sort({dueDate: 'asc'});
+        const user = await User.findById(req.session.userId);
+        res.json({tasks: tasks.map(t => addDerivedFields(t)), totalFocusTime: user.totalFocusTime || 0});
+
+    } catch (err) {
+        console.error(err)
+        res.status(500).send('Server Error');
+    }
 })
 
-app.delete('/tasks/:taskName', (req, res) => {
-    const taskName = decodeURIComponent(req.params.taskName);
-    tasks = tasks.filter(t => t.task !== taskName);
-    res.json({success: true});
+app.delete('/tasks/:id', async (req, res) => {
+    try {
+        const taskId = req.params.id;
+        const result = await Task.findOneAndDelete({_id: taskId, userId: req.session.userId});
+        if (!result){
+            return res.status(404).json({msg:'Task not found'});
+        }
+        const tasks = await Task.find({userId: req.session.userId}).sort({dueDate: 'asc'});
+        const user = await User.findById(req.session.userId);
+        res.json({tasks: tasks.map(t => addDerivedFields(t)), totalFocusTime: user.totalFocusTime || 0});
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+app.post('/update-focus', ensureAuthenticated, async (req, res) => {
+    try {
+        const minutesToAdd = req.body.minutes;
+        const user = await User.findByIdAndUpdate(
+            req.session.userId,
+            { $inc: { totalFocusTime: minutesToAdd } },
+            { new: true }
+        );
+
+        if (!user){
+            return res.status(404).json({ msg: 'User not found' });
+        }
+        res.json({ totalFocusTime: user.totalFocusTime });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
 });
 
 app.listen(process.env.PORT || port, () => {

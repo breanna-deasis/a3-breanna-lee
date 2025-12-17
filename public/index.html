@@ -3,7 +3,11 @@
   <head>
     <title>CS4241 Assignment 3</title>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="css/main.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cirrus-ui/dist/cirrus.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"/>
+      <link rel="stylesheet" href="css/main.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
@@ -12,47 +16,86 @@
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
   </head>
   <body>
-    <div class="workspace">
-      <!--<h1>Focus Workspace</h1>-->
+    <div class="container u-space-top-xl">
+      <!--div id = "auth-container" class="card p-4 u-flex u-flex-column u-items-center" style="display: block; max-width: 400px; margin: 0 auto;"-->
+      <div id="auth-container" style="display: none;">
+        <div class="card p-4 u-flex u-flex-column u-items-center">
+          <h2 class="title u-text-bold">Welcome to Your Workspace</h2>
+          <p class="subtitle">Log in or sign up to manage your tasks</p>
+          <div class="form-group u-width-100">
+            <input type="text" id="username-input" class="form-control" placeholder="Username">
+          </div>
+          <div class="form-group u-width-100">
+            <input type="password" id="password-input" class="form-control" placeholder="Password">
+          </div>
 
-      <!-- To Do List-->
-      <section id="tasks">
-        <h2>Tasks</h2>
-        <input type="text" id="task-input" placeholder="Add task..">
-        <input type="date" id="due-date-input">
-        <button id="add-task">Add</button>
-        <h2 id="overdue-header"></h2>
-        <ul id="priority-tasks"></ul>
-        <h2 id="other-header"></h2>
-        <ul id="task-list"></ul>
-        <ul id="completed-tasks"></ul>
-      </section>
+          <div class="u-flex u-gap-2 u-width-100">
+            <button id="login-button" class="btn--primary btn--block">Login</button>
+            <button id="register-button" class="btn--outline btn--block">Register</button>
+          </div>
+          <p id="auth-message" class="u-text-danger u-mt-sm"></p>
+        </div>
+      </div>
 
-      <div class="right-column">
-        <!-- Focus timer -->
-          <section id="focusTimer">
-            <h2>Focus Timer</h2>
-            <div id="timer">
-              <span id="minutes">45</span>:<span id="seconds">00</span>
+      <div id="todo-container" style="display: none;">
+        <div class="u-flex u-justify-space-between u-items-center u-mb-4">
+          <h1 class="u-text-bold">My Workspace</h1>
+          <button id="logout-button" class="btn--danger btn--sm">Logout</button>
+        </div>
+        <div class="workspace">
+          <!-- To Do List-->
+          <section id="tasks" class="card p-4">
+            <h2 class="title u-text-bold">Tasks</h2>
+
+            <div class="form-group row u-gap-sm">
+              <div class="col-6">
+                <input type="text" id="task-input" class="form-control" placeholder="Add task..">
+              </div>
+              <div class="col-4">
+                <input type="date" id="due-date-input" class="form-control">
+              </div>
+              <div class="col-2">
+                <button id="add-task" class="btn btn-primary btn--block">Add</button>
+              </div>
             </div>
-
-            <div class = "timerButtons">
-              <button id="start-pause" onclick="startPause()">Start</button>
-              <button id="reset" onclick="timerReset()">Restart</button>
-            </div>
+            <ul id="priority-tasks" class="list"></ul>
+            <ul id="task-list" class="list"></ul>
+            <ul id="completed-tasks" class="list"></ul>
           </section>
 
-        <!-- Note section ps. stays as a textbox, doesn't save-->
-        <section id="notes">
-          <h2>Notes</h2>
-            <!--<input type="text" id="entry-title" class="entry-title-input" placeholder="Entry title">-->
-            <!--<input type="text" id="author" placeholder="Your Name">-->
-            <!--<input type="text" id="date" placeholder="Today's Date">-->
-          <textarea id="focus" class="focus-input" placeholder="What are you working on today?"></textarea>
-          <textarea id="distraction" class="distraction-input" placeholder="Is there anything distracting you?"></textarea>
-        </section>
+          <div class="right-column">
+            <section id="focusTimer" class="card p-4 mb-2">
+              <h2 class="title u-text-bold">Focus Timer</h2>
+              <div class = "u-text-center u-mb-2">
+                <span class="u-text-muted u-font-size-sm">Completed: </span>
+                <span id="total-focus-time" class="u-text-bold">0</span>
+                <span class="u-text-muted u-font-size-sm"> minutes</span>
+              </div>
+
+              <div id="timer" class="u-text-center u-font-weight-bold u-font-size-xl">
+                <span id="minutes">45</span>:<span id="seconds">00</span>
+              </div>
+
+              <div class = "timerButtons u-flex u-justify-space-between u-mt-2">
+                <button id="start-pause" onclick="startPause()" class="btn btn--success btn--block mr-1">Start</button>
+                <button id="reset" onclick="timerReset()" class="btn btn--light btn--block ml-1">Restart</button>
+              </div>
+              
+            </section>
+
+            <!-- Note section ps. stays as a textbox, doesn't save-->
+            <section id="notes" class="card p-4">
+              <h2 class="title u-text-bold">Notes</h2>
+              <div class="form-group">
+                <textarea id="focus" class="form-control" placeholder="What are you working on today?"></textarea>
+              </div>
+              <div class="form-group">
+                <textarea id="distraction" class="form-control" placeholder="Is there anything distracting you?"></textarea>
+              </div>
+            </section>
+          </div>
+        </div>
       </div>
-      <!-- entry list -->
     </div>
     <script src="js/main.js"></script>
     <script src="js/timer.js"></script>
