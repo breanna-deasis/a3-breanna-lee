@@ -1,6 +1,7 @@
 {
   "name": "epicprogresstracker",
   "version": "1.0.0",
+  "main": "server.improved.js",
   "description": "progress tracker for goals",
   "author": "Breanna de Asis Lee",
   "scripts": {

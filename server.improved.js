@@ -231,3 +231,5 @@ app.post('/update-focus', ensureAuthenticated, async (req, res) => {
 app.listen(process.env.PORT || port, () => {
     console.log(`Server running on port${process.env.PORT || port}/`);
 });
+
+module.exports = app;
