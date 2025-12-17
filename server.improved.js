@@ -23,7 +23,11 @@ app.use(session({
 
 //Middleware to parse JSON
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 function ensureAuthenticated(req, res, next){
     if (req.session && req.session.userId){
@@ -232,8 +236,10 @@ app.post('/update-focus', ensureAuthenticated, async (req, res) => {
     }
 });
 
-app.listen(process.env.PORT || port, () => {
-    console.log(`Server running on port${process.env.PORT || port}/`);
-});
+if (process.env.NODE_ENV !== 'production'){
+    app.listen(process.env.PORT || port, () => {
+        console.log(`Server running on port${process.env.PORT || port}/`);
+    });
+}
 
 module.exports = app;
