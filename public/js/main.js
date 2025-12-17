@@ -208,11 +208,18 @@ const printTasks = (tasks) => {
     deleteButton.innerText = "Delete";
     deleteButton.className = 'btn btn--sm btn--danger ml-1';
     deleteButton.addEventListener('click', async() => {
-      const response = await fetch(`/tasks/${taskId}`,{ method: 'DELETE'});
-      if (response.ok){
-        const data = await response.json();
-        printTasks(data.tasks);
-        document.getElementById('total-focus-time').innerText = data.totalFocusTime || 0;
+      try {
+        const response = await fetch(`/tasks/${taskId}`,{ method: 'DELETE'});
+        if (response.ok){
+          const data = await response.json();
+          printTasks(data.tasks);
+          const focusDisplay = document.getElementById('total-focus-time');
+          if (focusDisplay){
+            focusDisplay.innerText = data.totalFocusTime || 0;
+          }
+        }
+      } catch (error) {
+        console.error('Failed to delete task:', error);
       }
     });
 
