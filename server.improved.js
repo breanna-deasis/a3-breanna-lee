@@ -239,7 +239,11 @@ app.post('/update-focus', ensureAuthenticated, async (req, res) => {
 
 if (process.env.NODE_ENV !== 'production'){
     app.listen(process.env.PORT || 3000, () => {
-        console.log(`Server running on port${process.env.PORT || port}/`);
+        console.log(`Server running on local host${process.env.PORT || port}`);
+    });
+} else {
+    app.listen(process.env.PORT, '0.0.0.0', () => {
+        console.log(`Server running on production port ${process.env.PORT}`);
     });
 }
 
