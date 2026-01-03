@@ -4,15 +4,17 @@ Assignment 3 - Persistence: Two-tier Web Application with Database, Express serv
 http://a3-breanna-lee.onrender.com
 
 The goal of this application is to have a very simple workspace that allows users to keep track of tasks to complete, feel encouraged to get started, and stay on track. 
-- the biggest challenge was trying to debug issues in Render. I tried both using Vercel and Leprd. These are both really cool tools for web development, but for something like this, it would've been more complicated than necessary.
-- I initially tried using github passport
-- I was looking for a CSS framework that would be very minimal and not distracting. 
+- the biggest challenge was trying to debug issues in Render. Major issues with logging in and smaller bugs from making edits for accessibility would not show up locally, but would crash on Render. I initially tried both using Vercel and Leprd. These are both really cool tools for web development, but for something like this, it would've been more complicated than necessary.
+- I initially attempted to use github passport. Instead I just kept with a simple login and register by checking and storing information in MongoDB, and using bcrypt to hash the passwords
+- I was looking for a CSS framework that would be very minimal and not distracting. Therefore I picked Cirrus.
   - The only CSS I changed was structure, and hover features.
-- a list of Express middleware packages you used and a short (one sentence) summary of what each one does. If you use a custom function, please add a little more detail about what it does.
+- express.json() parses incoming JSON request bodies into req.body
+- express.static() serves static files from the public folder
+- express session creates req.session, stores userId after login, and sends session cookie
+- ensureAuthenticated is a function that blocks access to routes unless a user is logged in
 
 ## Technical Achievements
 - **Tech Achievement 1**: I implemented my server using Express, and stored data related to logged in users with MongoDB
-- **Tech Achievement 2**: OAuth authentication via the GitHub strategy
 
 ### Design/Evaluation Achievements
 Got 100% in all four lighthouse tests - Performance, Best Practices, Accessibility, and SEO
