@@ -37,7 +37,7 @@ const setUIState = (loggedIn) => {
 
 const loadTasks = async ()=> {
   try {
-    const response = await fetch("/tasks");
+    const response = await fetch("/tasks", {credentials: "include"});
 
     if (response.status === 401){
       setUIState(false);
@@ -71,6 +71,7 @@ const handleAuth = async (url, action) => {
     const response = await fetch(url, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
+      credentials: 'include',
       body: JSON.stringify({username, password})
     });
 
@@ -97,7 +98,9 @@ const handleRegister = (event) => {
 }
 
 const handleLogout = async (event) => {
-  await fetch('/logout');
+  await fetch('/logout', 
+    {method: 'POST',
+      credentials: 'include'});
   setUIState(false);
   taskList.innerHTML = '';
   completedList.innerHTML = '';
@@ -119,6 +122,7 @@ const submit = async function( event ) {
     const response = await fetch( "/tasks", {
       method:"POST",
       headers: {"Content-Type": "application/json"},
+      credentials: "include",
       body: JSON.stringify({task, completed:false, dueDate})
     });//.then(function(response) {return response.json();})
     //.then(function(json) {
@@ -173,6 +177,7 @@ const printTasks = (tasks) => {
         await fetch('/tasks', {
           method: 'PATCH',
           headers: {'Content-Type': 'application/json'},
+          credentials: 'include',
           body: JSON.stringify({id: taskId, task: span.innerText })
         });
         loadTasks();
@@ -195,6 +200,7 @@ const printTasks = (tasks) => {
         await fetch('/tasks', {
           method: 'PATCH',
           headers: {'Content-Type': 'application/json'},
+          credentials: 'include',
           body: JSON.stringify({id: taskId, dueDate: newDateText })
         });
         loadTasks();
@@ -246,6 +252,7 @@ const toggleTask = async (taskId, isCompleted) => {
   const response = await fetch('/tasks', {
     method: 'PATCH',
     headers: {'Content-Type': 'application/json'},
+    credentials: 'include',
     body: JSON.stringify({ id: taskId, completed: isCompleted})
   });
   if (response.ok){

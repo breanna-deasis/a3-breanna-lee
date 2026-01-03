@@ -12,22 +12,34 @@ connectDB();
 const app = express();
 const port = 3000;
 
+app.set('trust proxy', 1);
+
+//Middleware to parse JSON
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+//session
 app.use(session({
     secret: process.env.SESSION_SECRET || 'default',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: process.env.NODE_ENV === 'production',
+    cookie: { 
+        secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 1000 * 60 * 60 * 24
     }
 }))
 
-//Middleware to parse JSON
-app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.use((req, res, next) => {
+  console.log('Session on request:', req.session);
+  next();
 });
 
 function ensureAuthenticated(req, res, next){
@@ -108,11 +120,19 @@ app.post('/login', async (req, res) => {
         }
 
         req.session.userId = user._id;
-        res.json({msg: 'Login successful', user: {id: user._id, username: user.username}});
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-    }
+
+        req.session.save(err => {
+            if (err) {
+                console.error(err);
+                return res.status(500).json({msg: 'Session save error' });
+            }
+
+            res.json({msg: 'Login successful', user: {id: user._id, username: user.username}});
+            })
+        } catch (err) {
+            console.error(err.message);
+            res.status(500).send('Server Error');
+        }
 });
 
 app.post('/logout', (req, res) => {
@@ -120,6 +140,7 @@ app.post('/logout', (req, res) => {
         if (err){
             return res.status(500).send('Could not log out');
         }
+        res.clearCookie('connect.sid');
         res.json({msg: 'Logout successful'});
     });
 });
@@ -202,7 +223,7 @@ app.patch('/tasks', ensureAuthenticated, async (req, res) => {
     }
 })
 
-app.delete('/tasks/:id', async (req, res) => {
+app.delete('/tasks/:id', ensureAuthenticated, async (req, res) => {
     try {
         const taskId = req.params.id;
         const result = await Task.findOneAndDelete({_id: taskId, userId: req.session.userId});
