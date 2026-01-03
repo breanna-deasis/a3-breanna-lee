@@ -82,7 +82,7 @@ const handleAuth = async (url, action) => {
       authMessage.innerText = result.msg || `Failed to ${action}`;
     }
   } catch (error) {
-    console.error(error);
+    //console.error(error);
     authMessage.innerText = 'A server error occurred';
   }
 };
@@ -151,6 +151,8 @@ const printTasks = (tasks) => {
 
   tasks.forEach( item => {
     const taskId = item.id;
+    const listLabel = document.createElement('label');
+    listLabel.className = 'list-label';
     const li = document.createElement('li');
     li.className = 'list-item';
 
@@ -158,6 +160,8 @@ const printTasks = (tasks) => {
     contentDiv.className = 'list-item-content u-flex-grow-1 u-flex u-items-center';
 
     //checkbox
+    const label = document.createElement('label');
+    label.className = 'checkbox';
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.checked = item.completed;
