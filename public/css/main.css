@@ -17,6 +17,10 @@ body {
   display: none;
 }
 
+button {
+  align-items: center;
+}
+
 #todo-container{
   display: none;
 }
