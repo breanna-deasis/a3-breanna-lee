@@ -37,6 +37,11 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+app.use((req, res, next) => {
+  console.log('Session on request:', req.session);
+  next();
+});
+
 function ensureAuthenticated(req, res, next){
     if (req.session && req.session.userId){
         return next();
